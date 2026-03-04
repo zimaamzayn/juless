@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ScreenWriter PWA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body class="dark-mode">
+    <div id="app">
+        <header id="toolbar">
+            <div class="toolbar-left">
+                <button id="btn-sidebar-toggle" title="Toggle Sidebar">☰</button>
+                <h1 id="script-title">Untitled Script</h1>
+            </div>
+            <div class="toolbar-right">
+                <button id="btn-new" title="New Script">New</button>
+                <button id="btn-open" title="Open Script">Open</button>
+                <button id="btn-import" title="Import Script">Import</button>
+                <button id="btn-save" title="Save Script">Save</button>
+                <button id="btn-search" title="Search">🔍</button>
+                <button id="btn-export" title="Export">Export</button>
+                <button id="btn-focus" title="Focus Mode">Focus</button>
+                <button id="btn-settings" title="Settings">⚙</button>
+            </div>
+        </header>
+
+        <main id="main-container">
+            <aside id="sidebar">
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active" data-tab="scenes">Scenes</button>
+                    <button class="tab-btn" data-tab="scripts">Scripts</button>
+                    <button class="tab-btn" data-tab="stats">Stats</button>
+                </div>
+                <div class="tab-content active" id="tab-scenes">
+                    <div id="scene-list"></div>
+                </div>
+                <div class="tab-content" id="tab-scripts">
+                    <div id="script-list"></div>
+                </div>
+                <div class="tab-content" id="tab-stats">
+                    <div id="stats-container"></div>
+                </div>
+            </aside>
+
+            <section id="editor-container">
+                <div id="page-container">
+                    <div id="editor" contenteditable="true" spellcheck="true">
+                        <div class="element scene-heading" data-type="scene-heading">INT. HOUSE - DAY</div>
+                        <div class="element action" data-type="action">A quiet morning.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer id="status-bar">
+            <div class="status-left">
+                <span id="stat-page">Page 1</span>
+                <span id="stat-words">Words: 0</span>
+            </div>
+            <div class="status-center">
+                <span id="current-element-type">Action</span>
+            </div>
+            <div class="status-right">
+                <span id="sync-status">Saved</span>
+            </div>
+        </footer>
+
+        <!-- Modals -->
+        <div id="modal-overlay" class="hidden">
+            <div id="modal-content">
+                <h2 id="modal-title">Modal Title</h2>
+                <div id="modal-body"></div>
+                <div id="modal-footer">
+                    <button id="modal-cancel">Cancel</button>
+                    <button id="modal-ok">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="storage.js"></script>
+    <script src="screenplay-engine.js"></script>
+    <script src="editor.js"></script>
+    <script src="ui.js"></script>
+    <script src="navigator.js"></script>
+    <script src="shortcuts.js"></script>
+    <script src="stats.js"></script>
+    <script src="export.js"></script>
+    <script src="import.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
