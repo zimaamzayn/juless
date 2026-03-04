@@ -25,6 +25,10 @@ const UI = (() => {
                     content.classList.remove('active');
                 });
                 document.getElementById(`tab-${target}`).classList.add('active');
+
+                if (target === 'scripts') {
+                    App.refreshScriptList();
+                }
             });
         });
 
@@ -33,6 +37,9 @@ const UI = (() => {
             if (e.target.id === 'modal-overlay') hideModal();
         });
         document.getElementById('modal-cancel').addEventListener('click', hideModal);
+
+        // Dark Mode toggle in Settings is handled by app.js,
+        // but we can ensure it's initialized
     };
 
     const showModal = (title, bodyHtml, onOk) => {
@@ -64,11 +71,27 @@ const UI = (() => {
         document.getElementById('script-title').textContent = title;
     };
 
+    const renderScriptList = (scripts, onSelect) => {
+        const listEl = document.getElementById('script-list');
+        listEl.innerHTML = '';
+        scripts.forEach(s => {
+            const item = document.createElement('div');
+            item.className = 'script-item';
+            item.style.padding = '8px';
+            item.style.borderBottom = '1px solid var(--border-color)';
+            item.style.cursor = 'pointer';
+            item.innerHTML = `<strong>${s.title}</strong><br><small>${new Date(s.lastModified).toLocaleDateString()}</small>`;
+            item.addEventListener('click', () => onSelect(s));
+            listEl.appendChild(item);
+        });
+    };
+
     return {
         init,
         showModal,
         hideModal,
         updateSyncStatus,
-        updateScriptTitle
+        updateScriptTitle,
+        renderScriptList
     };
 })();

@@ -21,6 +21,8 @@ const ScreenplayEngine = (() => {
 
     const getNextType = (currentType) => {
         switch (currentType) {
+            case ELEMENT_TYPES.ACTION:
+                return ELEMENT_TYPES.CHARACTER;
             case ELEMENT_TYPES.CHARACTER:
                 return ELEMENT_TYPES.DIALOGUE;
             case ELEMENT_TYPES.DIALOGUE:
@@ -53,14 +55,37 @@ const ScreenplayEngine = (() => {
             return ELEMENT_TYPES.TRANSITION;
         }
 
-        // Add more heuristics if needed
         return null;
+    };
+
+    const getSuggestions = (type, text, contentHtml) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contentHtml;
+        const query = text.toUpperCase();
+
+        if (type === ELEMENT_TYPES.SCENE_HEADING) {
+            const prefixes = ['INT.', 'EXT.', 'INT/EXT.', 'I/E.'];
+            const headings = Array.from(tempDiv.querySelectorAll('.scene-heading'))
+                .map(el => el.textContent.trim().toUpperCase());
+
+            const all = [...prefixes, ...headings];
+            return [...new Set(all)].filter(h => h.startsWith(query) && h !== query);
+        }
+
+        if (type === ELEMENT_TYPES.CHARACTER) {
+            const names = Array.from(tempDiv.querySelectorAll('.character'))
+                .map(el => el.textContent.trim().toUpperCase());
+            return [...new Set(names)].filter(n => n.startsWith(query) && n !== query);
+        }
+
+        return [];
     };
 
     return {
         ELEMENT_TYPES,
         getNextType,
         cycleType,
-        identifyType
+        identifyType,
+        getSuggestions
     };
 })();

@@ -1,6 +1,7 @@
 const App = (() => {
     let currentScript = null;
     let autosaveTimer = null;
+    let isModified = false;
 
     const init = async () => {
         // Initialize Modules
@@ -11,6 +12,13 @@ const App = (() => {
         Stats.init();
         Shortcuts.init();
 
+        // Theme Persistence
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.remove('dark-mode');
+        } else {
+            document.body.classList.add('dark-mode');
+        }
+
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -19,7 +27,7 @@ const App = (() => {
         }
 
         // Event Listeners
-        document.getElementById('btn-new').addEventListener('click', createNewScript);
+        document.getElementById('btn-new').addEventListener('click', handleNewScript);
         document.getElementById('btn-open').addEventListener('click', showOpenDialog);
         document.getElementById('btn-import').addEventListener('click', showImportDialog);
         document.getElementById('btn-save').addEventListener('click', saveCurrentScript);
@@ -34,6 +42,8 @@ const App = (() => {
         } else {
             createNewScript();
         }
+
+        refreshScriptList();
     };
 
     const loadScript = (script) => {
@@ -41,13 +51,27 @@ const App = (() => {
         Editor.setContent(script.content);
         UI.updateScriptTitle(script.title);
         UI.updateSyncStatus('Loaded');
+        isModified = false;
         onEditorChange();
+    };
+
+    const handleNewScript = async () => {
+        if (isModified) {
+            if (!confirm("You have unsaved changes. Do you want to save the current script before creating a new one?")) {
+                // If they say no, just proceed to new script without manual save
+                // (autosave might have already saved it though)
+            } else {
+                await saveCurrentScript();
+            }
+        }
+        createNewScript();
     };
 
     const createNewScript = async () => {
         const title = prompt("Enter script title:", "Untitled Script") || "Untitled Script";
         currentScript = await Storage.createNewScript(title);
         loadScript(currentScript);
+        refreshScriptList();
     };
 
     const saveCurrentScript = async () => {
@@ -56,6 +80,8 @@ const App = (() => {
         currentScript.content = Editor.getContent();
         await Storage.saveScript(currentScript);
         UI.updateSyncStatus('Saved');
+        isModified = false;
+        refreshScriptList();
     };
 
     const onEditorChange = () => {
@@ -64,10 +90,19 @@ const App = (() => {
         Stats.update(content);
 
         UI.updateSyncStatus('Modified');
+        isModified = true;
 
         // Autosave logic
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(saveCurrentScript, 3000);
+    };
+
+    const refreshScriptList = async () => {
+        const scripts = await Storage.getAllScripts();
+        UI.renderScriptList(scripts, (script) => {
+            if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
+            loadScript(script);
+        });
     };
 
     const showImportDialog = () => {
@@ -87,7 +122,6 @@ const App = (() => {
                 let script;
                 if (file.name.endsWith('.json')) {
                     script = await Import.fromJSON(file);
-                    // If it's a raw script object from Export.toJSON
                     if (script.title && script.content) {
                         const newScript = await Storage.createNewScript(script.title);
                         newScript.content = script.content;
@@ -101,6 +135,7 @@ const App = (() => {
                     await Storage.saveScript(newScript);
                     loadScript(newScript);
                 }
+                refreshScriptList();
                 UI.hideModal();
             } catch (err) {
                 alert("Import failed: " + err.message);
@@ -121,11 +156,11 @@ const App = (() => {
 
         UI.showModal("Open Script", listHtml, null);
 
-        // Add listeners to items in modal
         document.querySelectorAll('.script-item-modal').forEach(el => {
             el.addEventListener('click', async () => {
                 const id = el.dataset.id;
                 const script = await Storage.getScript(id);
+                if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
                 loadScript(script);
                 UI.hideModal();
             });
@@ -199,7 +234,7 @@ const App = (() => {
         const bodyHtml = `
             <div>
                 <label>
-                    <input type="checkbox" id="dark-mode-toggle" ${document.body.classList.contains('dark-mode') ? 'checked' : ''}> Dark Mode
+                    <input type="checkbox" id="dark-mode-toggle" ${document.body.classList.contains('dark-mode') ? 'checked' : ''}> Dark Mode (Night Mode)
                 </label>
                 <br><br>
                 <button id="btn-delete-current" style="background:red; color:white;">Delete Current Script</button>
@@ -210,8 +245,10 @@ const App = (() => {
         document.getElementById('dark-mode-toggle').addEventListener('change', (e) => {
             if (e.target.checked) {
                 document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
             } else {
                 document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
             }
         });
 
@@ -226,15 +263,16 @@ const App = (() => {
                 } else {
                     createNewScript();
                 }
+                refreshScriptList();
             }
         });
     };
 
     return {
         init,
-        saveCurrentScript
+        saveCurrentScript,
+        refreshScriptList
     };
 })();
 
-// Start the app
 window.addEventListener('DOMContentLoaded', App.init);

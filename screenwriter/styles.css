@@ -340,6 +340,31 @@ body.focus-mode #editor-container {
     background-color: rgba(0,0,0,0.05);
 }
 
+#editor-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    color: black;
+}
+
+#editor-suggestions.hidden {
+    display: none;
+}
+
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.suggestion-item.focused, .suggestion-item:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
