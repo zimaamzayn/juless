@@ -20,6 +20,14 @@ const Editor = (() => {
         suggestionEl.id = 'editor-suggestions';
         suggestionEl.className = 'hidden';
         document.body.appendChild(suggestionEl);
+
+        ensureBasicStructure();
+    };
+
+    const ensureBasicStructure = () => {
+        if (editorEl.children.length === 0 || !editorEl.querySelector('.element')) {
+            editorEl.innerHTML = '<div class="element scene-heading" data-type="scene-heading">INT. NEW SCENE - DAY</div><div class="element action" data-type="action"><br></div>';
+        }
     };
 
     const handleKeyDown = (e) => {
@@ -51,28 +59,27 @@ const Editor = (() => {
         } else if (e.key === 'Tab') {
             e.preventDefault();
             handleTabKey(e.shiftKey);
+        } else if (e.key === 'Backspace') {
+            // If deleting the last element, prevent it
+            if (editorEl.children.length === 1 && editorEl.children[0].textContent.length === 0) {
+                // Keep it
+            }
         }
     };
 
     const handleInput = (e) => {
         const selection = window.getSelection();
+        if (!selection.rangeCount) return;
         const range = selection.getRangeAt(0);
         const currentElement = getParentElement(range.startContainer);
 
         if (currentElement) {
-            // Automatic Parentheses for Parentheticals
-            if (currentElement.dataset.type === ScreenplayEngine.ELEMENT_TYPES.PARENTHETICAL) {
-                let text = currentElement.textContent;
-                if (!text.startsWith('(') && text.length > 0) {
-                    currentElement.textContent = '(' + text + (text.endsWith(')') ? '' : ')');
-                    moveCursorToIndex(currentElement, 1);
-                }
-            }
-
+            // Show suggestions
             // Show suggestions
             showSuggestionsFor(currentElement);
         }
 
+        ensureBasicStructure();
         if (onChangeCallback) onChangeCallback();
         updateStatusBar();
     };
@@ -91,7 +98,13 @@ const Editor = (() => {
         // Cleanup Parenthetical before leaving
         if (currentType === ScreenplayEngine.ELEMENT_TYPES.PARENTHETICAL) {
             let text = currentElement.textContent.trim();
-            if (!text.endsWith(')')) currentElement.textContent = text + ')';
+            if (text.length > 0) {
+                if (!text.startsWith('(')) text = '(' + text;
+                if (!text.endsWith(')')) text = text + ')';
+                currentElement.textContent = text;
+            }
+        } else if (currentType === ScreenplayEngine.ELEMENT_TYPES.CHARACTER || currentType === ScreenplayEngine.ELEMENT_TYPES.SCENE_HEADING) {
+            currentElement.textContent = currentElement.textContent.toUpperCase();
         }
 
         const nextType = ScreenplayEngine.getNextType(currentType);
@@ -145,8 +158,14 @@ const Editor = (() => {
         el.dataset.type = type;
 
         if (type === ScreenplayEngine.ELEMENT_TYPES.PARENTHETICAL) {
-            if (!el.textContent.startsWith('(')) el.textContent = '(' + el.textContent;
-            if (!el.textContent.endsWith(')')) el.textContent = el.textContent + ')';
+            let text = el.textContent.trim();
+            if (text.length > 0) {
+                if (!text.startsWith('(')) text = '(' + text;
+                if (!text.endsWith(')')) text = text + ')';
+                el.textContent = text;
+            } else {
+                el.textContent = '()';
+            }
         }
 
         updateStatusBar();
@@ -176,14 +195,24 @@ const Editor = (() => {
     const moveCursorToIndex = (el, index) => {
         const range = document.createRange();
         const selection = window.getSelection();
-        if (el.childNodes[0]) {
-            range.setStart(el.childNodes[0], index);
-        } else {
-            range.setStart(el, 0);
+        try {
+            if (el.childNodes.length > 0) {
+                let node = el.childNodes[0];
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const finalIndex = Math.min(index, node.length);
+                    range.setStart(node, finalIndex);
+                } else {
+                    range.setStart(el, 0);
+                }
+            } else {
+                range.setStart(el, 0);
+            }
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        } catch (e) {
+            console.error("Cursor move error", e);
         }
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
     };
 
     const showSuggestionsFor = (el) => {
@@ -226,7 +255,9 @@ const Editor = (() => {
 
     const moveSuggestionFocus = (dir) => {
         const items = suggestionEl.querySelectorAll('.suggestion-item');
+        if (items.length === 0) return;
         let index = Array.from(items).findIndex(item => item.classList.contains('focused'));
+        if (index === -1) index = 0;
         items[index].classList.remove('focused');
         index = (index + dir + items.length) % items.length;
         items[index].classList.add('focused');
@@ -247,6 +278,7 @@ const Editor = (() => {
     const getContent = () => editorEl.innerHTML;
     const setContent = (html) => {
         editorEl.innerHTML = html;
+        ensureBasicStructure();
         updateStatusBar();
     };
 

@@ -65,10 +65,18 @@ const ScreenplayEngine = (() => {
 
         if (type === ELEMENT_TYPES.SCENE_HEADING) {
             const prefixes = ['INT.', 'EXT.', 'INT/EXT.', 'I/E.'];
+            const suffixes = [' - DAY', ' - NIGHT', ' - MORNING', ' - EVENING', ' - CONTINUOUS'];
             const headings = Array.from(tempDiv.querySelectorAll('.scene-heading'))
                 .map(el => el.textContent.trim().toUpperCase());
 
             const all = [...prefixes, ...headings];
+
+            // If it starts with prefix but doesn't have suffix, suggest suffixes
+            let matchedPrefix = prefixes.find(p => query.startsWith(p));
+            if (matchedPrefix && !query.includes(' - ')) {
+                return suffixes.map(s => query + s);
+            }
+
             return [...new Set(all)].filter(h => h.startsWith(query) && h !== query);
         }
 

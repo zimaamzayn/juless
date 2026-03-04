@@ -12,13 +12,6 @@ const App = (() => {
         Stats.init();
         Shortcuts.init();
 
-        // Theme Persistence
-        if (localStorage.getItem('theme') === 'light') {
-            document.body.classList.remove('dark-mode');
-        } else {
-            document.body.classList.add('dark-mode');
-        }
-
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
@@ -57,10 +50,7 @@ const App = (() => {
 
     const handleNewScript = async () => {
         if (isModified) {
-            if (!confirm("You have unsaved changes. Do you want to save the current script before creating a new one?")) {
-                // If they say no, just proceed to new script without manual save
-                // (autosave might have already saved it though)
-            } else {
+            if (confirm("You have unsaved changes. Do you want to save the current script before creating a new one?")) {
                 await saveCurrentScript();
             }
         }

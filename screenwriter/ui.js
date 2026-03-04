@@ -38,8 +38,13 @@ const UI = (() => {
         });
         document.getElementById('modal-cancel').addEventListener('click', hideModal);
 
-        // Dark Mode toggle in Settings is handled by app.js,
-        // but we can ensure it's initialized
+        // Load theme from localStorage
+        const theme = localStorage.getItem('theme') || 'dark';
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
     };
 
     const showModal = (title, bodyHtml, onOk) => {
